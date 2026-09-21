@@ -1,623 +1,805 @@
-let tasks = JSON.parse(
-localStorage.getItem("studyTasks")
-) || [];
+/* =========================
+   STUDENT STUDY PLANNER
+========================= */
+
+
+/* =========================
+   VARIABLES
+========================= */
+
+let tasks =
+    JSON.parse(localStorage.getItem("studyTasks")) || [];
 
 let currentFilter = "all";
 
-/* =====================================
-DOM ELEMENTS
-===================================== */
+
+/* =========================
+   DOM ELEMENTS
+========================= */
 
 const taskModal =
-document.getElementById("taskModal");
+    document.getElementById("taskModal");
 
-const openTaskModal =
-document.getElementById("openTaskModal");
+const openModalBtn =
+    document.getElementById("openModalBtn");
 
-const closeTaskModal =
-document.getElementById("closeTaskModal");
+const closeModalBtn =
+    document.getElementById("closeModalBtn");
 
-const cancelTask =
-document.getElementById("cancelTask");
-
-const emptyAddTask =
-document.getElementById("emptyAddTask");
+const cancelModalBtn =
+    document.getElementById("cancelModalBtn");
 
 const taskForm =
-document.getElementById("taskForm");
+    document.getElementById("taskForm");
 
 const taskList =
-document.getElementById("taskList");
-
-const emptyState =
-document.getElementById("emptyState");
-
-const priorityFilter =
-document.getElementById("priorityFilter");
+    document.getElementById("taskList");
 
 const searchInput =
-document.getElementById("searchInput");
+    document.getElementById("searchInput");
+
+const priorityFilter =
+    document.getElementById("priorityFilter");
 
 const sortTasks =
-document.getElementById("sortTasks");
+    document.getElementById("sortTasks");
 
-const taskSectionTitle =
-document.getElementById("taskSectionTitle");
+const navItems =
+    document.querySelectorAll(".nav-item");
 
-const currentDate =
-document.getElementById("currentDate");
 
-/* =====================================
-STATISTICS ELEMENTS
-===================================== */
+/* =========================
+   INITIALIZE APP
+========================= */
 
-const totalTasks =
-document.getElementById("totalTasks");
+document.addEventListener("DOMContentLoaded", () => {
 
-const pendingTasks =
-document.getElementById("pendingTasks");
+    displayCurrentDate();
 
-const completedTasks =
-document.getElementById("completedTasks");
+    renderTasks();
 
-const progressPercentage =
-document.getElementById("progressPercentage");
+    setMinimumDate();
 
-const progressText =
-document.getElementById("progressText");
+});
 
-const progressFill =
-document.getElementById("progressFill");
 
-/* =====================================
-DISPLAY CURRENT DATE
-===================================== */
+/* =========================
+   CURRENT DATE
+========================= */
 
 function displayCurrentDate() {
-const today = new Date();
 
-const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-};
+    const currentDateElement =
+        document.getElementById("currentDate");
 
-currentDate.textContent =
-    today.toLocaleDateString(
-        "en-US",
-        options
-    );
+    const today = new Date();
 
+    const options = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    };
 
+    currentDateElement.textContent =
+        today.toLocaleDateString(
+            "en-US",
+            options
+        );
 }
 
-/* =====================================
-OPEN MODAL
-===================================== */
+
+/* =========================
+   GET TODAY
+========================= */
+
+function getTodayDate() {
+
+    const today = new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(today.getMonth() + 1)
+            .padStart(2, "0");
+
+    const day =
+        String(today.getDate())
+            .padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
+/* =========================
+   MINIMUM DATE
+========================= */
+
+function setMinimumDate() {
+
+    const dateInput =
+        document.getElementById("taskDate");
+
+    dateInput.min =
+        getTodayDate();
+}
+
+
+/* =========================
+   CHECK OVERDUE
+========================= */
+
+function isOverdue(task) {
+
+    if (task.completed) {
+        return false;
+    }
+
+    const today =
+        getTodayDate();
+
+    return task.date < today;
+}
+
+
+/* =========================
+   MODAL
+========================= */
 
 function openModal() {
-taskModal.classList.add("show");
+
+    taskModal.classList.add("active");
+
+    document
+        .getElementById("taskTitle")
+        .focus();
 }
 
-/* =====================================
-CLOSE MODAL
-===================================== */
 
 function closeModal() {
 
+    taskModal.classList.remove("active");
 
-taskModal.classList.remove("show");
+    taskForm.reset();
 
-taskForm.reset();
+    setMinimumDate();
+}
 
+
+/* Open modal */
+
+openModalBtn.addEventListener(
+    "click",
+    openModal
+);
+
+
+/* Close modal */
+
+closeModalBtn.addEventListener(
+    "click",
+    closeModal
+);
+
+
+/* Cancel */
+
+cancelModalBtn.addEventListener(
+    "click",
+    closeModal
+);
+
+
+/* Close when clicking outside */
+
+taskModal.addEventListener(
+    "click",
+    (event) => {
+
+        if (event.target === taskModal) {
+            closeModal();
+        }
+
+    }
+);
+
+
+/* =========================
+   ADD TASK
+========================= */
+
+taskForm.addEventListener(
+    "submit",
+    (event) => {
+
+        event.preventDefault();
+
+
+        const title =
+            document
+                .getElementById("taskTitle")
+                .value
+                .trim();
+
+        const subject =
+            document
+                .getElementById("taskSubject")
+                .value;
+
+        const priority =
+            document
+                .getElementById("taskPriority")
+                .value;
+
+        const date =
+            document
+                .getElementById("taskDate")
+                .value;
+
+
+        if (
+            title === "" ||
+            subject === "" ||
+            priority === "" ||
+            date === ""
+        ) {
+
+            return;
+
+        }
+
+
+        const newTask = {
+
+            id: Date.now(),
+
+            title: title,
+
+            subject: subject,
+
+            priority: priority,
+
+            date: date,
+
+            completed: false
+
+        };
+
+
+        tasks.push(newTask);
+
+        saveTasks();
+
+        renderTasks();
+
+        closeModal();
+
+    }
+);
+
+
+/* =========================
+   SAVE TASKS
+========================= */
+
+function saveTasks() {
+
+    localStorage.setItem(
+        "studyTasks",
+        JSON.stringify(tasks)
+    );
 
 }
 
-/* =====================================
-ADD NEW TASK
-===================================== */
 
-taskForm.addEventListener(
-"submit",
-function(event) {
-    event.preventDefault();
+/* =========================
+   RENDER TASKS
+========================= */
+
+function renderTasks() {
+
+    let filteredTasks =
+        [...tasks];
 
 
-    const title =
-        document
-            .getElementById("taskTitle")
-            .value
+    /* =====================
+       NAVIGATION FILTER
+    ====================== */
+
+    if (currentFilter === "today") {
+
+        const today =
+            getTodayDate();
+
+        filteredTasks =
+            filteredTasks.filter(
+                task =>
+                    task.date === today
+            );
+
+    }
+
+
+    else if (currentFilter === "pending") {
+
+        filteredTasks =
+            filteredTasks.filter(
+                task =>
+                    !task.completed
+            );
+
+    }
+
+
+    else if (currentFilter === "completed") {
+
+        filteredTasks =
+            filteredTasks.filter(
+                task =>
+                    task.completed
+            );
+
+    }
+
+
+    /* =====================
+       PRIORITY FILTER
+    ====================== */
+
+    const selectedPriority =
+        priorityFilter.value;
+
+
+    if (selectedPriority !== "all") {
+
+        filteredTasks =
+            filteredTasks.filter(
+                task =>
+                    task.priority ===
+                    selectedPriority
+            );
+
+    }
+
+
+    /* =====================
+       SEARCH
+    ====================== */
+
+    const searchText =
+        searchInput.value
+            .toLowerCase()
             .trim();
 
 
-    const subject =
-        document
-            .getElementById("taskSubject")
-            .value;
+    if (searchText !== "") {
+
+        filteredTasks =
+            filteredTasks.filter(task => {
+
+                const title =
+                    task.title
+                        .toLowerCase();
+
+                const subject =
+                    task.subject
+                        .toLowerCase();
+
+                return (
+                    title.includes(searchText) ||
+                    subject.includes(searchText)
+                );
+
+            });
+
+    }
 
 
-    const priority =
-        document
-            .getElementById("taskPriority")
-            .value;
+    /* =====================
+       SORTING
+    ====================== */
+
+    const selectedSort =
+        sortTasks.value;
 
 
-    const date =
-        document
-            .getElementById("taskDate")
-            .value;
+    if (selectedSort === "dueDate") {
+
+        filteredTasks.sort(
+            (a, b) =>
+                new Date(a.date) -
+                new Date(b.date)
+        );
+
+    }
 
 
-    if (!title || !subject || !date) {
+    else if (selectedSort === "priority") {
+
+        const priorityOrder = {
+
+            high: 1,
+
+            medium: 2,
+
+            low: 3
+
+        };
+
+
+        filteredTasks.sort(
+            (a, b) =>
+                priorityOrder[a.priority] -
+                priorityOrder[b.priority]
+        );
+
+    }
+
+
+    else if (selectedSort === "newest") {
+
+        filteredTasks.sort(
+            (a, b) =>
+                b.id - a.id
+        );
+
+    }
+
+
+    /* =====================
+       EMPTY STATE
+    ====================== */
+
+    if (filteredTasks.length === 0) {
+
+        taskList.innerHTML = `
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📚
+                </div>
+
+                <h3>
+                    No tasks found
+                </h3>
+
+                <p>
+                    Try adding a new task
+                    or changing your filters.
+                </p>
+
+            </div>
+
+        `;
+
+        updateStatistics();
+
+        updateSectionTitle();
 
         return;
 
     }
 
 
-    const newTask = {
+    /* =====================
+       TASK HTML
+    ====================== */
 
-        id: Date.now(),
+    taskList.innerHTML =
+        filteredTasks
+            .map(task => {
 
-        title: title,
-
-        subject: subject,
-
-        priority: priority,
-
-        date: date,
-
-        completed: false
-
-    };
+                const overdue =
+                    isOverdue(task);
 
 
-    tasks.push(newTask);
+                return `
+
+                    <div
+                        class="task-card
+                        ${task.completed ? "completed" : ""}
+                        ${overdue ? "overdue" : ""}"
+                    >
+
+                        <div class="task-content">
+
+                            <div class="task-title">
+
+                                ${escapeHTML(task.title)}
+
+                            </div>
+
+
+                            <div class="task-meta">
+
+                                <span class="subject">
+
+                                    ${escapeHTML(task.subject)}
+
+                                </span>
+
+
+                                <span
+                                    class="priority ${task.priority}"
+                                >
+
+                                    ${capitalize(task.priority)}
+
+                                </span>
+
+
+                                <span
+                                    class="${overdue ? "overdue-date" : ""}"
+                                >
+
+                                    📅
+                                    ${formatDate(task.date)}
+
+                                    ${
+                                        overdue
+                                        ? `
+                                            <span class="overdue-badge">
+                                                ⚠️ Overdue
+                                            </span>
+                                        `
+                                        : ""
+                                    }
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="task-actions">
+
+                            <button
+                                class="complete-btn
+                                ${task.completed ? "completed-btn" : ""}"
+                                onclick="toggleTask(${task.id})"
+                                title="Mark as complete"
+                            >
+
+                                ${
+                                    task.completed
+                                    ? "✓"
+                                    : "○"
+                                }
+
+                            </button>
+
+
+                            <button
+                                class="delete-task"
+                                onclick="deleteTask(${task.id})"
+                                title="Delete task"
+                            >
+
+                                🗑️
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            })
+            .join("");
+
+
+    updateStatistics();
+
+    updateSectionTitle();
+
+}
+
+
+/* =========================
+   TOGGLE TASK
+========================= */
+
+function toggleTask(id) {
+
+    tasks =
+        tasks.map(task => {
+
+            if (task.id === id) {
+
+                return {
+
+                    ...task,
+
+                    completed:
+                        !task.completed
+
+                };
+
+            }
+
+            return task;
+
+        });
 
 
     saveTasks();
 
     renderTasks();
 
-    closeModal();
-
-}
-);
-
-/* =====================================
-SAVE TASKS
-===================================== */
-
-function saveTasks() {
-localStorage.setItem(
-    "studyTasks",
-    JSON.stringify(tasks)
-);
-
 }
 
-/* =====================================
-RENDER TASKS
-===================================== */
 
-function renderTasks() {
+/* =========================
+   DELETE TASK
+========================= */
 
-taskList.innerHTML = "";
+function deleteTask(id) {
 
-
-let filteredTasks = [...tasks];
-
-
-/* -----------------------------
-   NAVIGATION FILTER
------------------------------ */
-
-if (currentFilter === "today") {
-
-    const today = getTodayDate();
-
-    filteredTasks =
-        filteredTasks.filter(
-            task => task.date === today
+    const confirmDelete =
+        confirm(
+            "Are you sure you want to delete this task?"
         );
 
-}
+
+    if (!confirmDelete) {
+        return;
+    }
 
 
-if (currentFilter === "pending") {
-
-    filteredTasks =
-        filteredTasks.filter(
-            task => !task.completed
-        );
-
-}
-
-
-if (currentFilter === "completed") {
-
-    filteredTasks =
-        filteredTasks.filter(
-            task => task.completed
-        );
-
-}
-
-
-/* -----------------------------
-   PRIORITY FILTER
------------------------------ */
-
-const selectedPriority =
-    priorityFilter.value;
-
-
-if (selectedPriority !== "all") {
-
-    filteredTasks =
-        filteredTasks.filter(
+    tasks =
+        tasks.filter(
             task =>
-                task.priority === selectedPriority
+                task.id !== id
         );
+
+
+    saveTasks();
+
+    renderTasks();
 
 }
 
 
-/* -----------------------------
-   SEARCH
------------------------------ */
+/* =========================
+   UPDATE STATISTICS
+========================= */
 
-const searchText =
-    searchInput.value
-        .toLowerCase()
-        .trim();
+function updateStatistics() {
+
+    const total =
+        tasks.length;
 
 
-if (searchText !== "") {
+    const completed =
+        tasks.filter(
+            task =>
+                task.completed
+        ).length;
 
-    filteredTasks =
-        filteredTasks.filter(task => {
 
-            const title =
-                task.title.toLowerCase();
+    const pending =
+        tasks.filter(
+            task =>
+                !task.completed
+        ).length;
 
-            const subject =
-                task.subject.toLowerCase();
 
-            return (
-                title.includes(searchText) ||
-                subject.includes(searchText)
+    const overdue =
+        tasks.filter(
+            task =>
+                isOverdue(task)
+        ).length;
+
+
+    let progress = 0;
+
+
+    if (total > 0) {
+
+        progress =
+            Math.round(
+                (completed / total) * 100
             );
 
-        });
+    }
+
+
+    document
+        .getElementById("totalTasks")
+        .textContent = total;
+
+
+    document
+        .getElementById("pendingTasks")
+        .textContent = pending;
+
+
+    document
+        .getElementById("completedTasks")
+        .textContent = completed;
+
+
+    document
+        .getElementById("overdueTasks")
+        .textContent = overdue;
+
+
+    document
+        .getElementById("progressPercent")
+        .textContent =
+            `${progress}%`;
+
+
+    document
+        .getElementById("progressBar")
+        .style.width =
+            `${progress}%`;
 
 }
 
 
-/* -----------------------------
-   SORT TASKS
------------------------------ */
+/* =========================
+   SECTION TITLE
+========================= */
 
-const selectedSort =
-    sortTasks.value;
+function updateSectionTitle() {
 
-
-if (selectedSort === "dueDate") {
-
-    filteredTasks.sort(
-        (a, b) =>
-            new Date(a.date) -
-            new Date(b.date)
-    );
-
-}
+    const title =
+        document.getElementById(
+            "sectionTitle"
+        );
 
 
-else if (selectedSort === "priority") {
+    const titles = {
 
-    const priorityOrder = {
+        all: "All Tasks",
 
-        high: 1,
+        today: "Today's Tasks",
 
-        medium: 2,
+        pending: "Pending Tasks",
 
-        low: 3
+        completed: "Completed Tasks"
 
     };
 
 
-    filteredTasks.sort(
-        (a, b) =>
-            priorityOrder[a.priority] -
-            priorityOrder[b.priority]
-    );
+    title.textContent =
+        titles[currentFilter];
 
 }
 
 
-else if (selectedSort === "newest") {
+/* =========================
+   NAVIGATION
+========================= */
 
-    filteredTasks.sort(
-        (a, b) =>
-            b.id - a.id
-    );
+navItems.forEach(item => {
 
-}
-
-
-/* -----------------------------
-   EMPTY STATE
------------------------------ */
-
-if (filteredTasks.length === 0) {
-
-    emptyState.style.display = "block";
-
-}
-
-else {
-
-    emptyState.style.display = "none";
-
-}
-
-
-/* -----------------------------
-   CREATE TASK CARDS
------------------------------ */
-
-filteredTasks.forEach(task => {
-
-    const taskCard =
-        document.createElement("div");
-
-
-    taskCard.className =
-        "task-card";
-
-
-    if (task.completed) {
-
-        taskCard.classList.add(
-            "completed"
-        );
-
-    }
-
-
-    taskCard.innerHTML = `
-
-        <input
-            type="checkbox"
-            class="task-checkbox"
-            ${task.completed ? "checked" : ""}
-            onchange="toggleTask(${task.id})"
-        >
-
-        <div class="task-info">
-
-            <div class="task-title">
-                ${escapeHTML(task.title)}
-            </div>
-
-            <div class="task-meta">
-
-                <span class="subject">
-                    📚 ${escapeHTML(task.subject)}
-                </span>
-
-                <span>
-                    📅 ${formatDate(task.date)}
-                </span>
-
-                <span class="priority ${task.priority}">
-                    ${capitalize(task.priority)}
-                </span>
-
-            </div>
-
-        </div>
-
-        <button
-            class="delete-task"
-            onclick="deleteTask(${task.id})"
-            title="Delete task"
-        >
-            🗑️
-        </button>
-
-    `;
-
-
-    taskList.appendChild(taskCard);
-
-});
-
-
-updateStatistics();
-
-
-}
-
-/* =====================================
-SEARCH EVENT
-===================================== */
-
-searchInput.addEventListener(
-"input",
-renderTasks
-);
-
-/* =====================================
-SORT EVENT
-===================================== */
-
-sortTasks.addEventListener(
-"change",
-renderTasks
-);
-
-/* =====================================
-PRIORITY FILTER
-===================================== */
-
-priorityFilter.addEventListener(
-"change",
-renderTasks
-);
-
-/* =====================================
-TOGGLE TASK
-===================================== */
-
-function toggleTask(id) {
-
-tasks = tasks.map(task => {
-
-    if (task.id === id) {
-
-        return {
-
-            ...task,
-
-            completed:
-                !task.completed
-
-        };
-
-    }
-
-    return task;
-
-});
-
-
-saveTasks();
-
-renderTasks();
-
-}
-
-/* =====================================
-DELETE TASK
-===================================== */
-
-function deleteTask(id) {
-const confirmed =
-    confirm(
-        "Are you sure you want to delete this task?"
-    );
-
-
-if (!confirmed) {
-
-    return;
-
-}
-
-
-tasks =
-    tasks.filter(
-        task => task.id !== id
-    );
-
-
-saveTasks();
-
-renderTasks();
-
-}
-
-/* =====================================
-UPDATE STATISTICS
-===================================== */
-
-function updateStatistics() {
-
-const total =
-    tasks.length;
-
-
-const completed =
-    tasks.filter(
-        task => task.completed
-    ).length;
-
-
-const pending =
-    total - completed;
-
-
-let percentage = 0;
-
-
-if (total > 0) {
-
-    percentage =
-        Math.round(
-            (completed / total) * 100
-        );
-
-}
-
-
-totalTasks.textContent =
-    total;
-
-
-pendingTasks.textContent =
-    pending;
-
-
-completedTasks.textContent =
-    completed;
-
-
-progressPercentage.textContent =
-    percentage + "%";
-
-
-progressText.textContent =
-    percentage + "%";
-
-
-progressFill.style.width =
-    percentage + "%";
-
-}
-
-/* =====================================
-NAVIGATION FILTER
-===================================== */
-
-document
-.querySelectorAll(".nav-item")
-.forEach(button => {
-
-    button.addEventListener(
+    item.addEventListener(
         "click",
-        function() {
+        () => {
 
-            document
-                .querySelectorAll(".nav-item")
-                .forEach(item =>
-                    item.classList.remove(
-                        "active"
-                    )
+            navItems.forEach(nav => {
+
+                nav.classList.remove(
+                    "active"
                 );
 
+            });
 
-            this.classList.add(
+
+            item.classList.add(
                 "active"
             );
 
 
             currentFilter =
-                this.dataset.filter;
+                item.dataset.filter;
 
-
-            updateSectionTitle();
 
             renderTasks();
 
@@ -626,146 +808,86 @@ document
 
 });
 
-/* =====================================
-UPDATE SECTION TITLE
-===================================== */
 
-function updateSectionTitle() {
+/* =========================
+   SEARCH
+========================= */
 
-const titles = {
-
-    all: "All Tasks",
-
-    today: "Today's Tasks",
-
-    pending: "Pending Tasks",
-
-    completed: "Completed Tasks"
-
-};
-
-
-taskSectionTitle.textContent =
-    titles[currentFilter];
-}
-
-/* =====================================
-MODAL EVENTS
-===================================== */
-
-openTaskModal.addEventListener(
-"click",
-openModal
+searchInput.addEventListener(
+    "input",
+    renderTasks
 );
 
-closeTaskModal.addEventListener(
-"click",
-closeModal
+
+/* =========================
+   PRIORITY FILTER
+========================= */
+
+priorityFilter.addEventListener(
+    "change",
+    renderTasks
 );
 
-cancelTask.addEventListener(
-"click",
-closeModal
+
+/* =========================
+   SORT
+========================= */
+
+sortTasks.addEventListener(
+    "change",
+    renderTasks
 );
 
-emptyAddTask.addEventListener(
-"click",
-openModal
-);
 
-/* Close modal by clicking outside */
-
-taskModal.addEventListener(
-"click",
-function(event) {
-
-    if (
-        event.target === taskModal
-    ) {
-
-        closeModal();
-
-    }
-
-}
-
-);
-
-/* =====================================
-HELPER FUNCTIONS
-===================================== */
-
-function getTodayDate() {
-const today =
-    new Date();
-
-
-const year =
-    today.getFullYear();
-
-
-const month =
-    String(
-        today.getMonth() + 1
-    ).padStart(2, "0");
-
-
-const day =
-    String(
-        today.getDate()
-    ).padStart(2, "0");
-
-
-return `${year}-${month}-${day}`;
-
-}
+/* =========================
+   FORMAT DATE
+========================= */
 
 function formatDate(dateString) {
-const date =
-    new Date(
-        dateString + "T00:00:00"
+
+    const date =
+        new Date(
+            dateString + "T00:00:00"
+        );
+
+
+    return date.toLocaleDateString(
+        "en-US",
+        {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        }
     );
 
-
-return date.toLocaleDateString(
-    "en-US",
-    {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-    }
-);
-
 }
+
+
+/* =========================
+   CAPITALIZE
+========================= */
 
 function capitalize(text) {
 
-return (
-    text.charAt(0).toUpperCase() +
-    text.slice(1)
-);
+    return (
+        text.charAt(0).toUpperCase() +
+        text.slice(1)
+    );
 
 }
 
-/* Prevent HTML injection */
+
+/* =========================
+   ESCAPE HTML
+========================= */
 
 function escapeHTML(text) {
 
-const div =
-    document.createElement("div");
+    const div =
+        document.createElement("div");
 
-div.textContent =
-    text;
+    div.textContent = text;
 
-return div.innerHTML;
-
+    return div.innerHTML;
 
 }
-
-/* =====================================
-INITIALIZE APPLICATION
-===================================== */
-
-displayCurrentDate();
-
-renderTasks();
